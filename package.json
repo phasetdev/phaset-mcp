@@ -1,7 +1,7 @@
 {
   "name": "phaset-mcp",
   "description": "MCP server for AI-assisted Phaset manifest generation",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "Phaset",
   "license": "MIT",
   "keywords": [
@@ -24,7 +24,7 @@
   "homepage": "https://github.com/phasetdev/phaset-mcp#readme",
   "files": [
     "build",
-    "integration_schema.yml",
+    "integration.schema.yml",
     "README.md",
     "LICENSE",
     "!/tests"
@@ -33,7 +33,7 @@
     "phaset-mcp": "./build/index.js"
   },
   "scripts": {
-    "build": "npx tsc && chmod +x build/index.js",
+    "build": "npx tsc && chmod +x build/index.js && cp README.md integration.schema.yml build/",
     "inspect": "npm run build && npx @modelcontextprotocol/inspector node build/index.js",
     "lint": "npx @biomejs/biome check --write ./src ./tests",
     "watch": "npx tsc --watch",

@@ -1,8 +1,7 @@
 {
   "name": "phaset-manifest-generator-mcp",
-  "version": "0.0.1",
   "description": "MCP server for AI-assisted Phaset manifest generation",
-  "type": "module",
+  "version": "0.0.1",
   "author": "Phaset",
   "license": "MIT",
   "keywords": [
@@ -12,14 +11,26 @@
     "manifest-generation",
     "model-context-protocol"
   ],
-  "bin": {
-    "phaset-mcp": "./build/index.js"
+  "type": "module",
+  "main": "build/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/phasetdev/phaset-manifest-generator-mcp.git"
   },
+  "bugs": {
+    "url": "https://github.com/phasetdev/phaset-manifest-generator-mcp/issues"
+  },
+  "homepage": "https://github.com/phasetdev/phaset-manifest-generator-mcp#readme",
   "files": [
     "build",
     "integration_schema.yml",
-    "README.md"
+    "README.md",
+    "LICENSE",
+    "!/tests"
   ],
+  "bin": {
+    "phaset-mcp": "./build/index.js"
+  },
   "scripts": {
     "build": "npx tsc && chmod +x build/index.js",
     "inspect": "npm run build && npx @modelcontextprotocol/inspector node build/index.js",
@@ -29,7 +40,10 @@
     "clean": "rm -rf build",
     "test": "npx vitest run",
     "test:watch": "npx vitest",
-    "test:coverage": "npx vitest run --coverage"
+    "test:coverage": "npx vitest run --coverage",
+    "package": "npm pack",
+    "prepublishOnly": "npm run build",
+    "prepare": "husky"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "latest",
@@ -41,6 +55,7 @@
     "@types/node": "24",
     "@vitest/coverage-v8": "4",
     "esbuild": "0",
+    "husky": "9",
     "tsx": "4",
     "typescript": "5",
     "vitest": "4"

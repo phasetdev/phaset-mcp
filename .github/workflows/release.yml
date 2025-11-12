@@ -1,0 +1,53 @@
+name: Release
+
+permissions:
+  contents: read
+  packages: write
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: 'https://npm.pkg.github.com'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Compile
+        run: npx tsc
+
+      - name: Test
+        run: npm test
+
+      - name: Build artifact
+        run: npm run build
+
+  publish:
+    needs: ['release']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org/
+      - run: |
+          npm install
+          npm run build
+          git config --global user.email ${{ secrets.GIT_EMAIL }}
+          git config --global user.name ${{ secrets.GIT_NAME }}
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

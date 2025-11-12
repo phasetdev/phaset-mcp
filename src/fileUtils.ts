@@ -31,10 +31,7 @@ export async function findFiles(
       const entries = await fs.readdir(dir, { withFileTypes: true });
 
       for (const entry of entries) {
-        const relativePath = path.relative(
-          baseDir,
-          path.join(dir, entry.name)
-        );
+        const relativePath = path.relative(baseDir, path.join(dir, entry.name));
 
         // Check if this path should be ignored
         if (shouldIgnore(relativePath, normalizedIgnore)) {

@@ -403,17 +403,50 @@ ${PROMPT_TEMPLATE}`
     if (fileName.toLowerCase().startsWith('readme')) return 2;
 
     // High priority: other package manager files
-    if (['go.mod', 'pom.xml', 'build.gradle', 'Cargo.toml', 'pyproject.toml', 'setup.py', 'requirements.txt', 'Gemfile', 'composer.json'].includes(fileName)) return 3;
+    if (
+      [
+        'go.mod',
+        'pom.xml',
+        'build.gradle',
+        'Cargo.toml',
+        'pyproject.toml',
+        'setup.py',
+        'requirements.txt',
+        'Gemfile',
+        'composer.json'
+      ].includes(fileName)
+    )
+      return 3;
 
     // Medium-high priority: API specs and main config files
-    if (fileName.startsWith('openapi.') || fileName.startsWith('swagger.') || fileName.includes('api-spec')) return 4;
-    if (fileName === 'Dockerfile' || fileName === 'docker-compose.yml' || fileName === 'docker-compose.yaml') return 5;
+    if (
+      fileName.startsWith('openapi.') ||
+      fileName.startsWith('swagger.') ||
+      fileName.includes('api-spec')
+    )
+      return 4;
+    if (
+      fileName === 'Dockerfile' ||
+      fileName === 'docker-compose.yml' ||
+      fileName === 'docker-compose.yaml'
+    )
+      return 5;
 
     // Medium priority: CI/CD configs
-    if (dirName.includes('.github/workflows') || fileName === '.gitlab-ci.yml' || fileName === 'Jenkinsfile') return 6;
+    if (
+      dirName.includes('.github/workflows') ||
+      fileName === '.gitlab-ci.yml' ||
+      fileName === 'Jenkinsfile'
+    )
+      return 6;
 
     // Lower priority: infrastructure as code
-    if (filePath.includes('terraform/') || filePath.includes('k8s/') || filePath.includes('kubernetes/')) return 8;
+    if (
+      filePath.includes('terraform/') ||
+      filePath.includes('k8s/') ||
+      filePath.includes('kubernetes/')
+    )
+      return 8;
 
     // Default priority
     return 7;
@@ -512,7 +545,6 @@ ${PROMPT_TEMPLATE}`
             content
           });
           totalTokens += tokens;
-
         } catch (error) {
           // Skip files that can't be read (permission errors, etc.)
           console.error(
@@ -524,7 +556,6 @@ ${PROMPT_TEMPLATE}`
       console.error(
         `Collected ${results.length} files (≈${totalTokens} tokens)`
       );
-
     } catch (error) {
       console.error(
         `File search failed: ${error instanceof Error ? error.message : String(error)}`

@@ -1,0 +1,828 @@
+openapi: 3.1.0
+info:
+  title: Phaset Integration API
+  description: Host your software catalog in Phaset by documenting it with Records
+  contact:
+    name: Phaset
+    url: https://my-company.com
+    email: support@my-company.com
+  version: 1.0.0
+servers:
+  - url: https://my-company.com/api
+    description: Phaset API
+tags:
+  - name: integration
+security:
+  - TokenAuth: []
+paths:
+  /integration/event/{ORG_ID}/{RECORD_ID}/{WEBHOOK_TOKEN}:
+    post:
+      summary: Handle inbound webhook events
+      description: Multi-purpose endpoint to send various events (deployments, incidents, PRs, reviews, comments, changes) to Phaset.
+      operationId: send-event
+      tags:
+        - integration
+      parameters:
+        - name: ORG_ID
+          description: Your Phaset organization ID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: RECORD_ID
+          description: The Record in Phaset that this operation pertains to
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: WEBHOOK_TOKEN
+          description: Your Record-unique webhook token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/EventChange'
+                - $ref: '#/components/schemas/EventComment'
+                - $ref: '#/components/schemas/EventDeployment'
+                - $ref: '#/components/schemas/EventIncidentOpened'
+                - $ref: '#/components/schemas/EventIncidentResolved'
+                - $ref: '#/components/schemas/EventPRClosed'
+                - $ref: '#/components/schemas/EventPRMerged'
+                - $ref: '#/components/schemas/EventPROpened'
+                - $ref: '#/components/schemas/EventReviewApproved'
+                - $ref: '#/components/schemas/EventReviewChanges'
+      responses:
+        '200':
+          description: Event processed successfully
+        '400':
+          description: Invalid input or other user error
+        '401':
+          description: User not authorized
+        '429':
+          description: Rate limited
+        '500':
+          description: Server error
+
+  /integration/record/{ORG_ID}/{RECORD_ID}/{WEBHOOK_TOKEN}:
+    post:
+      summary: Handle inbound records
+      description: Upload or update a Record (Manifest) in Phaset.
+      operationId: upload-record
+      tags:
+        - integration
+      parameters:
+        - name: ORG_ID
+          description: Your Phaset organization ID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: RECORD_ID
+          description: The Record in Phaset that this operation pertains to
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: WEBHOOK_TOKEN
+          description: Your Record-unique webhook token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordUpdate'
+      responses:
+        '200':
+          description: Record processed successfully
+        '400':
+          description: Invalid input or other user error
+        '401':
+          description: User not authorized
+        '429':
+          description: Rate limited
+        '500':
+          description: Server error
+
+  /integration/standards/{ORG_ID}/{RECORD_ID}/{WEBHOOK_TOKEN}:
+    post:
+      summary: Handle inbound standards
+      description: Upload standards lint results for a Record.
+      operationId: upload-standards
+      tags:
+        - integration
+      parameters:
+        - name: ORG_ID
+          description: Your Phaset organization ID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: RECORD_ID
+          description: The Record in Phaset that this operation pertains to
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: WEBHOOK_TOKEN
+          description: Your Record-unique webhook token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StandardLintResult'
+      responses:
+        '200':
+          description: Standards results processed successfully
+        '400':
+          description: Invalid input or other user error
+        '401':
+          description: User not authorized
+        '429':
+          description: Rate limited
+        '500':
+          description: Server error
+
+  /integration/baselines/{ORG_ID}/{BASELINE_ID}/{RECORD_ID}/{WEBHOOK_TOKEN}:
+    get:
+      summary: Get a Baseline configuration
+      description: Retrieve a Baseline configuration for standards linting, authorized with the webhook token.
+      operationId: get-baseline
+      tags:
+        - integration
+      parameters:
+        - name: ORG_ID
+          description: Your Phaset organization ID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: BASELINE_ID
+          description: The Baseline ID to retrieve
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: RECORD_ID
+          description: The Record in Phaset that this operation pertains to
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: WEBHOOK_TOKEN
+          description: Your Record-unique webhook token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Baseline configuration retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Baseline configuration for standards linting
+        '400':
+          description: Invalid request
+        '401':
+          description: User not authorized
+        '404':
+          description: Baseline not found
+        '429':
+          description: Rate limited
+        '500':
+          description: Server error
+
+components:
+  securitySchemes:
+    TokenAuth:
+      type: apiKey
+      in: path
+      name: WEBHOOK_TOKEN
+      description: Webhook token used for authentication, passed as a path parameter
+
+  schemas:
+    RecordUpdate:
+      type: object
+      additionalProperties: false
+      properties:
+        spec:
+          $ref: '#/components/schemas/Spec'
+        api:
+          $ref: '#/components/schemas/Api'
+        baseline:
+          $ref: '#/components/schemas/Baseline'
+        contacts:
+          $ref: '#/components/schemas/Contacts'
+        dependencies:
+          $ref: '#/components/schemas/Dependencies'
+        links:
+          $ref: '#/components/schemas/Links'
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+        slo:
+          $ref: '#/components/schemas/Slo'
+        tags:
+          $ref: '#/components/schemas/Tags'
+      required:
+        - spec
+      example:
+        spec:
+          repo: "org123/abc123"
+          name: "my-api"
+          description: "My API is awesome!"
+          kind: "api"
+          lifecycleStage: "production"
+          version: "1.0.0"
+          group: "abcd1234"
+          system: "efgh5678"
+          domain: "ijkl9012"
+          dataSensitivity: "internal"
+          businessCriticality: "high"
+          sourcingModel: "custom"
+          deploymentModel: "public_cloud"
+        contacts:
+          - email: sam.person@cloud.xyz
+            relation: Service Owner
+        dependencies:
+          - target: "abc1234567"
+            description: "Authentication service"
+            criticality: "critical"
+        tags:
+          - "typescript"
+          - "backend"
+        slo:
+          - title: "API Latency"
+            description: "Max latency must be 350ms for the 90th percentile"
+            type: "latency"
+            implementation: "(sum:trace.aws.lambda.hits.by_http_status...)"
+            target: "350ms"
+            period: 30
+        api:
+          - name: "My API"
+            schemaPath: "https://api.example.com/schema.yml"
+        baseline:
+          id: "Ssk2zidY"
+        metadata:
+          customField: "customValue"
+        links:
+          - url: "https://my-confluence.atlassian.net/wiki/spaces/DEV/pages/123456789/"
+            title: "Confluence documentation"
+            icon: "documentation"
+
+    StandardLintResult:
+      type: object
+      required:
+        - passes
+        - warnings
+        - failures
+        - results
+      properties:
+        passes:
+          type: integer
+          description: Number of passing standards checks
+        warnings:
+          type: integer
+          description: Number of warning-level standards checks
+        failures:
+          type: integer
+          description: Number of failing standards checks
+        results:
+          type: array
+          description: Detailed results for each standards check
+          items:
+            type: object
+            required:
+              - message
+              - name
+              - path
+              - status
+            properties:
+              message:
+                type: string
+                description: Message describing the check result
+              name:
+                type: string
+                description: Name of the standards check
+              path:
+                type: string
+                description: Path to the field being checked
+              status:
+                type: string
+                description: Status of the check
+                enum:
+                  - pass
+                  - warning
+                  - failure
+
+    EventChange:
+      type: object
+      required:
+        - event
+        - commitSha
+      properties:
+        event:
+          type: string
+          enum:
+            - change
+        commitSha:
+          type: string
+          description: Git commit SHA for the change
+        timestamp:
+          type: string
+          format: int64
+          description: Unix timestamp (optional)
+
+    EventDeployment:
+      type: object
+      required:
+        - event
+        - commitSha
+      properties:
+        event:
+          type: string
+          enum:
+            - deployment
+        commitSha:
+          type: string
+          description: Git commit SHA for the deployment
+        timestamp:
+          type: string
+          format: int64
+          description: Unix timestamp (optional)
+
+    EventIncidentOpened:
+      type: object
+      required:
+        - event
+        - id
+        - createdAt
+      properties:
+        event:
+          type: string
+          enum:
+            - incident-opened
+        id:
+          type: string
+          description: Incident ID
+        createdAt:
+          type: string
+          format: int64
+          description: Unix timestamp when incident was created
+
+    EventIncidentResolved:
+      type: object
+      required:
+        - event
+        - id
+        - createdAt
+        - resolvedAt
+      properties:
+        event:
+          type: string
+          enum:
+            - incident-resolved
+        id:
+          type: string
+          description: Incident ID
+        createdAt:
+          type: string
+          format: int64
+          description: Unix timestamp when incident was created
+        resolvedAt:
+          type: string
+          format: int64
+          description: Unix timestamp when incident was resolved
+
+    EventComment:
+      type: object
+      required:
+        - event
+      properties:
+        event:
+          type: string
+          enum:
+            - comment
+
+    EventReviewApproved:
+      type: object
+      required:
+        - event
+      properties:
+        event:
+          type: string
+          enum:
+            - review-approved
+        createdAt:
+          type: string
+          format: int64
+          description: Unix timestamp when review was created
+        submittedAt:
+          type: string
+          format: int64
+          description: Unix timestamp when review was submitted
+
+    EventReviewChanges:
+      type: object
+      required:
+        - event
+      properties:
+        event:
+          type: string
+          enum:
+            - review-changes
+        createdAt:
+          type: string
+          format: int64
+          description: Unix timestamp when review was created
+        submittedAt:
+          type: string
+          format: int64
+          description: Unix timestamp when changes were requested
+
+    EventPROpened:
+      type: object
+      required:
+        - event
+      properties:
+        event:
+          type: string
+          enum:
+            - pr-opened
+        additions:
+          type: integer
+          description: Number of lines added
+        changedFiles:
+          type: integer
+          description: Number of files changed
+        deletions:
+          type: integer
+          description: Number of lines deleted
+
+    EventPRClosed:
+      type: object
+      required:
+        - event
+      properties:
+        event:
+          type: string
+          enum:
+            - pr-closed
+        createdAt:
+          type: string
+          format: int64
+          description: Unix timestamp when PR was created
+        closedAt:
+          type: string
+          format: int64
+          description: Unix timestamp when PR was closed
+
+    EventPRMerged:
+      type: object
+      required:
+        - event
+      properties:
+        event:
+          type: string
+          enum:
+            - pr-merged
+        createdAt:
+          type: string
+          format: int64
+          description: Unix timestamp when PR was created
+        mergedAt:
+          type: string
+          format: int64
+          description: Unix timestamp when PR was merged
+
+    Spec:
+      type: object
+      required:
+        - repo
+        - name
+      additionalProperties: false
+      properties:
+        repo:
+          type: string
+          description: Name of the repository where the code base is stored.
+          minLength: 1
+          maxLength: 500
+          example: org123/abc123
+        name:
+          type: string
+          description: Name of the component.
+          minLength: 1
+          maxLength: 500
+          example: my-service
+        description:
+          type: string
+          description: Describes the component.
+          minLength: 1
+          maxLength: 1500
+          example: My Service handles all the transactions for my book club
+        kind:
+          type: string
+          description: Describes which type of solution this is.
+          enum:
+            - service
+            - api
+            - component
+            - cots
+            - product
+            - external
+            - other
+        lifecycleStage:
+          type: string
+          description: The lifecycle stage this component is in.
+          enum:
+            - concept
+            - planning
+            - development
+            - testing
+            - production
+            - maintenance
+            - deprecated
+            - retired
+          example: production
+        version:
+          type: string
+          description: The version of the component.
+          minLength: 1
+          maxLength: 500
+          example: 1.0.0
+        group:
+          type: string
+          description: The 8-character ID of the group responsible for this component.
+          minLength: 8
+          maxLength: 8
+          pattern: '^[a-zA-Z0-9]{8}$'
+          example: abcd1234
+        system:
+          type: string
+          description: The 8-character ID of a system this component is part of.
+          minLength: 8
+          maxLength: 8
+          pattern: '^[a-zA-Z0-9]{8}$'
+          example: efgh5678
+        domain:
+          type: string
+          description: The 8-character ID of a domain this component is part of.
+          minLength: 8
+          maxLength: 8
+          pattern: '^[a-zA-Z0-9]{8}$'
+          example: ijkl9012
+        dataSensitivity:
+          type: string
+          description: The level of data sensitivity.
+          enum:
+            - public
+            - internal
+            - secret
+            - other
+        businessCriticality:
+          type: string
+          description: How business critical the referenced software is.
+          enum:
+            - critical
+            - high
+            - medium
+            - low
+            - auxiliary
+        sourcingModel:
+          type: string
+          description: Describes how the referenced software was sourced and procured.
+          enum:
+            - cots
+            - modified_cots
+            - open_source
+            - custom
+            - outsourced
+            - legacy
+        deploymentModel:
+          type: string
+          description: Describes how the referenced software is technically deployed.
+          enum:
+            - onpremises
+            - private_cloud
+            - public_cloud
+            - hybrid_cloud
+            - multi_cloud
+            - edge
+            - saas
+
+    Baseline:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          description: Reference to a Baseline ID
+          example: Ssk2zidY
+
+    Contacts:
+      type: array
+      maxItems: 3
+      items:
+        $ref: '#/components/schemas/Contact'
+
+    Contact:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email address of the contact
+          minLength: 1
+          maxLength: 50
+          example: sam.person@cloud.xyz
+        relation:
+          type: string
+          description: Relation of the contact to the system.
+          minLength: 1
+          maxLength: 50
+          example: Service Owner
+
+    Dependencies:
+      type: array
+      items:
+        $ref: '#/components/schemas/Dependency'
+
+    Dependency:
+      type: object
+      required:
+        - target
+      properties:
+        target:
+          type: string
+          description: The 10-character Record ID this component depends on
+          minLength: 10
+          maxLength: 10
+          example: abc1234567
+        description:
+          type: string
+          description: Description of the dependency relationship
+          minLength: 1
+          maxLength: 300
+          example: Authentication service
+        criticality:
+          type: string
+          description: How critical this dependency is
+          enum:
+            - critical
+            - high
+            - medium
+            - low
+            - auxiliary
+
+    Slo:
+      type: array
+      maxItems: 20
+      items:
+        $ref: '#/components/schemas/SloItem'
+
+    SloItem:
+      type: object
+      description: Service level objective (SLO) information.
+      required:
+        - title
+        - description
+        - type
+        - target
+        - period
+      properties:
+        title:
+          type: string
+          description: Short name or description of the SLO.
+          minLength: 1
+          maxLength: 500
+          example: API Latency
+        description:
+          type: string
+          description: Describes what the SLO does and measures.
+          minLength: 1
+          maxLength: 1500
+          example: Max latency must be 350ms for the 90th percentile
+        type:
+          type: string
+          description: What type of SLO is this?
+          enum:
+            - latency
+            - availability
+            - correctness
+            - other
+          example: latency
+        implementation:
+          type: string
+          description: Optional implementation query.
+          minLength: 1
+          maxLength: 1500
+          example: (sum:trace.aws.lambda.hits.by_http_status...)
+        target:
+          type: string
+          description: Compliance target, typically described as a percentage, percentile, or duration.
+          minLength: 1
+          maxLength: 500
+          example: 99.9%
+        period:
+          type: number
+          description: Compliance period in days (1-365).
+          minimum: 1
+          maximum: 365
+          example: 30
+
+    Api:
+      type: array
+      maxItems: 20
+      items:
+        $ref: '#/components/schemas/ApiItem'
+
+    ApiItem:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Name of the API.
+          minLength: 1
+          maxLength: 500
+          example: My API
+        schemaPath:
+          type: string
+          description: Path to a schema or definition of the API using an absolute URL.
+          minLength: 1
+          maxLength: 500
+          example: https://api.example.com/schema.yml
+
+    Metadata:
+      type: object
+      additionalProperties:
+        type: string
+        minLength: 1
+        maxLength: 500
+
+    Links:
+      type: array
+      maxItems: 20
+      items:
+        $ref: '#/components/schemas/LinkItem'
+
+    LinkItem:
+      type: object
+      additionalProperties: false
+      required:
+        - url
+        - title
+      properties:
+        url:
+          type: string
+          description: URL for the link.
+          minLength: 1
+          maxLength: 500
+          example: https://my-confluence.atlassian.net/wiki/spaces/DEV/pages/123456789/
+        title:
+          type: string
+          description: Title and description of the link.
+          minLength: 1
+          maxLength: 500
+          example: Confluence documentation
+        icon:
+          type: string
+          description: What type of icon should represent this?
+          enum:
+            - web
+            - api
+            - service
+            - documentation
+            - task
+            - dashboard
+            - other
+          example: documentation
+
+    Tags:
+      type: array
+      maxItems: 5
+      items:
+        type: string
+        minLength: 1
+        maxLength: 20
+        pattern: '^[a-zA-Z0-9._~-]*$'
+        description: URL-safe, ASCII-compatible tag

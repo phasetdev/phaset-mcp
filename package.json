@@ -1,0 +1,48 @@
+{
+  "name": "phaset-manifest-generator-mcp",
+  "version": "0.0.1",
+  "description": "MCP server for AI-assisted Phaset manifest generation",
+  "type": "module",
+  "author": "Phaset",
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "phaset",
+    "software-catalog",
+    "manifest-generation",
+    "model-context-protocol"
+  ],
+  "bin": {
+    "phaset-mcp": "./build/index.js"
+  },
+  "files": [
+    "build",
+    "integration_schema.yml",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "npx tsc && chmod +x build/index.js",
+    "inspect": "npm run build && npx @modelcontextprotocol/inspector node build/index.js",
+    "lint": "npx @biomejs/biome check --write ./src ./tests",
+    "watch": "npx tsc --watch",
+    "dev": "npx tsc && node build/index.js",
+    "clean": "rm -rf build",
+    "test": "npx vitest run",
+    "test:watch": "npx vitest",
+    "test:coverage": "npx vitest run --coverage"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2",
+    "@modelcontextprotocol/inspector": "latest",
+    "@types/node": "24",
+    "@vitest/coverage-v8": "4",
+    "esbuild": "0",
+    "tsx": "4",
+    "typescript": "5",
+    "vitest": "4"
+  }
+}

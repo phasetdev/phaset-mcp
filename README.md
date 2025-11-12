@@ -1,22 +1,28 @@
-# Phaset Lightweight MCP
+# Phaset Manifest Generator MCP
 
-> AI-assisted Phaset manifest generation using Model Context Protocol
+**AI-assisted Phaset manifest generation using Model Context Protocol.**
 
-A minimal MCP server that leverages Claude's intelligence to generate `phaset.manifest.json` files by analyzing your repository. Instead of implementing complex parsing logic, this server provides Claude with your project files and the Phaset schema, letting AI do the analysis.
+A minimal MCP server that leverages Claude's intelligence to generate `phaset.manifest.json` files by analyzing your repository.
+
+_This may or may not work with other MCP-compatible tools, such as ChatGPT, but no testing has been done for anything other than Claude._
 
 ## Quick Start
 
 ### Installation
 
+You will need to have [Node.js](https://nodejs.org/en) installed.
+
 ```bash
-npm install -g phaset-lightweight-mcp
+npm install -g phaset-mcp
 ```
 
 ### Configuration
 
-**Claude Desktop** (macOS): Edit `~/Library/Application Support/Claude/claude_desktop_config.json`
+#### Claude Desktop
 
-**Claude Desktop** (Windows): Edit `%APPDATA%\Claude\claude_desktop_config.json`
+**(macOS)**: Edit `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+**(Windows)**: Edit `%APPDATA%\Claude\claude_desktop_config.json`
 
 Add:
 
@@ -24,13 +30,37 @@ Add:
 {
   "mcpServers": {
     "phaset": {
-      "command": "phaset-mcp"
+      "command": "npx",
+      "args": ["-y", "phaset-mcp"]
     }
   }
 }
 ```
 
 Restart Claude Desktop completely.
+
+#### Claude Code
+
+Add the below to `.claude.json`:
+
+```json
+{
+  "mcpServers": {
+    "phaset": {
+      "command": "npx",
+      "args": ["-y", "phaset-mcp"]
+    }
+  }
+}
+```
+
+#### CLI
+
+Run:
+
+```bash
+claude mcp add phaset -- npx -y phaset-mcp
+```
 
 ### Usage
 
@@ -49,12 +79,11 @@ Claude will:
 
 ## Key Features
 
-- **100% OpenAPI Compliant**: Generated manifests strictly conform to the RecordUpdate schema with no additional fields
+- **100% Phaset Compliant**: Generated manifests strictly conform to the Phaset schema
 - **Smart analysis**: Leverages Claude's native understanding of code and configs
-- **Separated concerns**: Inference notes are presented as text, not injected into the JSON
+- **Helpful notes**: Inference notes are presented as complementary text
 - **Multiple depth levels**: Choose minimal, standard, or deep file analysis
-- **Auto-maintenance**: Improves automatically as Claude's capabilities improve
-- **Language agnostic**: Works with Node.js, Go, Python, Rust, Java, and more
+- **Language agnostic**: Works with any language Claude understands
 
 ## Available Tools
 
@@ -125,9 +154,9 @@ Fields marked as TODO:
 
 ## Example Output
 
-The generated response includes two parts: a valid OpenAPI-compliant JSON manifest and separate inference notes.
+The generated response includes two parts: a valid JSON manifest and separate inference notes.
 
-### Manifest (100% OpenAPI Valid)
+### Manifest
 
 ```json
 {
@@ -169,49 +198,6 @@ The generated response includes two parts: a valid OpenAPI-compliant JSON manife
 - **api.name**: HIGH - From OpenAPI spec title
 - **api.schemaPath**: MANUAL - Needs public URL for hosted schema
 
-## Development
-
-### Setup
-
-```bash
-git clone <repo-url>
-cd phaset-lightweight-mcp
-npm install
-npm run build
-npm link
-```
-
-### Testing
-
-```bash
-# Run tests
-npm test
-
-# Watch mode
-npm run test:watch
-
-# Coverage
-npm run test:coverage
-
-# Development mode
-npm run dev
-```
-
-## Design Philosophy: "Thin MCP, Smart Claude"
-
-This server follows a minimal design philosophy:
-
-1. **Provide schema** - Give Claude the Phaset structure
-2. **Collect files** - Gather relevant project files
-3. **Let Claude analyze** - Leverage AI's native intelligence
-
-**Benefits**:
-
-- 90% less code than traditional parsers
-- No language-specific parsing logic needed
-- Automatic improvements as Claude evolves
-- Better handling of edge cases through reasoning
-
 ## Tips for Best Results
 
 1. **Keep READMEs updated** - Claude extracts descriptions from documentation
@@ -219,14 +205,6 @@ This server follows a minimal design philosophy:
 3. **Document APIs** - Include OpenAPI/Swagger specs for API detection
 4. **Provide CODEOWNERS** - Helps identify contacts
 5. **More files = better inference** - Use "deep" analysis for comprehensive results
-
-## Publishing
-
-```bash
-npm version patch
-npm run build
-npm publish
-```
 
 ## Resources and links
 
@@ -236,8 +214,4 @@ npm publish
 
 ## License
 
-MIT
-
-## Contributing
-
-Issues and PRs welcome! This project prioritizes simplicity and leveraging AI capabilities over complex implementations.
+MIT. See the `LICENSE` file.

@@ -1,11 +1,12 @@
 {
-  "name": "phaset-manifest-generator-mcp",
+  "name": "phaset-mcp",
   "description": "MCP server for AI-assisted Phaset manifest generation",
   "version": "0.0.1",
   "author": "Phaset",
   "license": "MIT",
   "keywords": [
     "mcp",
+    "mcp-server",
     "phaset",
     "software-catalog",
     "manifest-generation",
@@ -15,12 +16,12 @@
   "main": "build/index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/phasetdev/phaset-manifest-generator-mcp.git"
+    "url": "https://github.com/phasetdev/phaset-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/phasetdev/phaset-manifest-generator-mcp/issues"
+    "url": "https://github.com/phasetdev/phaset-mcp/issues"
   },
-  "homepage": "https://github.com/phasetdev/phaset-manifest-generator-mcp#readme",
+  "homepage": "https://github.com/phasetdev/phaset-mcp#readme",
   "files": [
     "build",
     "integration_schema.yml",

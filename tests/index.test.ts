@@ -307,7 +307,7 @@ describe('PhasetMCPServer', () => {
   });
 
   describe('File Filtering and Edge Cases', () => {
-    test('It should skip files larger than 200KB and log error', async () => {
+    test('It should truncate files larger than 50KB and log warning', async () => {
       // Create a large package.json file (matches minimal patterns)
       const largePath = path.join(testDir, 'package-lock.json');
       // First backup the existing file if any
@@ -332,14 +332,18 @@ describe('PhasetMCPServer', () => {
       });
 
       const data = JSON.parse(result.content[0].text);
-      const hasLargeFile = data.files.some(
+      const largeFile = data.files.find(
         (f: any) => f.path === 'package-lock.json'
       );
-      expect(hasLargeFile).toBe(false);
 
-      // Verify console.error was called for large file
+      // File should be included but truncated
+      expect(largeFile).toBeDefined();
+      expect(largeFile.content).toContain('[Content truncated');
+      expect(largeFile.content.length).toBeLessThan(largeContent.length);
+
+      // Verify console.error was called for truncation
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Skipping package-lock.json: too large')
+        expect.stringContaining('Truncating package-lock.json: too large')
       );
 
       consoleErrorSpy.mockRestore();

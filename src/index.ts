@@ -393,12 +393,55 @@ ${PROMPT_TEMPLATE}`
     return patterns[depth] || standard;
   }
 
+  private getFilePriority(filePath: string): number {
+    // Lower number = higher priority
+    const fileName = path.basename(filePath);
+    const dirName = path.dirname(filePath);
+
+    // Highest priority: package managers and README
+    if (fileName === 'package.json') return 1;
+    if (fileName.toLowerCase().startsWith('readme')) return 2;
+
+    // High priority: other package manager files
+    if (['go.mod', 'pom.xml', 'build.gradle', 'Cargo.toml', 'pyproject.toml', 'setup.py', 'requirements.txt', 'Gemfile', 'composer.json'].includes(fileName)) return 3;
+
+    // Medium-high priority: API specs and main config files
+    if (fileName.startsWith('openapi.') || fileName.startsWith('swagger.') || fileName.includes('api-spec')) return 4;
+    if (fileName === 'Dockerfile' || fileName === 'docker-compose.yml' || fileName === 'docker-compose.yaml') return 5;
+
+    // Medium priority: CI/CD configs
+    if (dirName.includes('.github/workflows') || fileName === '.gitlab-ci.yml' || fileName === 'Jenkinsfile') return 6;
+
+    // Lower priority: infrastructure as code
+    if (filePath.includes('terraform/') || filePath.includes('k8s/') || filePath.includes('kubernetes/')) return 8;
+
+    // Default priority
+    return 7;
+  }
+
+  private estimateTokens(text: string): number {
+    // Rough estimate: 1 token ≈ 4 characters
+    return Math.ceil(text.length / 4);
+  }
+
+  private truncateContent(content: string, maxChars: number): string {
+    if (content.length <= maxChars) return content;
+
+    const truncated = content.substring(0, maxChars);
+    return `${truncated}\n\n... [Content truncated - file too large. Showing first ${maxChars} characters]`;
+  }
+
   private async findAndReadFiles(
     repoPath: string,
     patterns: string[]
   ): Promise<Array<{ path: string; content: string }>> {
-    const results: Array<{ path: string; content: string }> = [];
+    const MAX_FILE_SIZE = 50000; // Max chars per file (≈12.5k tokens)
+    const MAX_TOTAL_TOKENS = 15000; // Budget for all file contents combined
+
+    const allFiles: Array<{ path: string; priority: number }> = [];
     const seenPaths = new Set<string>();
+    const results: Array<{ path: string; content: string }> = [];
+    let totalTokens = 0;
 
     try {
       const matches = await findFiles(repoPath, patterns, {
@@ -422,32 +465,54 @@ ${PROMPT_TEMPLATE}`
         ]
       });
 
+      // Collect all files with their priorities
       for (const match of matches) {
         if (seenPaths.has(match)) continue;
         seenPaths.add(match);
 
+        const priority = this.getFilePriority(match);
+        allFiles.push({ path: match, priority });
+      }
+
+      // Sort by priority (lower number first)
+      allFiles.sort((a, b) => a.priority - b.priority);
+
+      // Read files until we hit our token budget
+      for (const { path: match } of allFiles) {
         try {
           const fullPath = path.join(repoPath, match);
-          const content = await fs.readFile(fullPath, 'utf-8');
+          let content = await fs.readFile(fullPath, 'utf-8');
 
-          // Skip binary files and very large files
-          if (content.length > 200000) {
-            console.error(
-              `Skipping ${match}: too large (${content.length} bytes)`
-            );
-            continue;
-          }
-
-          // Skip files with null bytes (likely binary)
+          // Skip binary files
           if (content.includes('\0')) {
             console.error(`Skipping ${match}: appears to be binary`);
             continue;
+          }
+
+          // Truncate large files
+          if (content.length > MAX_FILE_SIZE) {
+            console.error(
+              `Truncating ${match}: too large (${content.length} chars, keeping first ${MAX_FILE_SIZE})`
+            );
+            content = this.truncateContent(content, MAX_FILE_SIZE);
+          }
+
+          const tokens = this.estimateTokens(content);
+
+          // Stop if adding this file would exceed our budget
+          if (totalTokens + tokens > MAX_TOTAL_TOKENS) {
+            console.error(
+              `Reached token budget limit (${totalTokens}/${MAX_TOTAL_TOKENS}). Collected ${results.length} files. Skipping remaining ${allFiles.length - results.length} files.`
+            );
+            break;
           }
 
           results.push({
             path: match,
             content
           });
+          totalTokens += tokens;
+
         } catch (error) {
           // Skip files that can't be read (permission errors, etc.)
           console.error(
@@ -455,6 +520,11 @@ ${PROMPT_TEMPLATE}`
           );
         }
       }
+
+      console.error(
+        `Collected ${results.length} files (≈${totalTokens} tokens)`
+      );
+
     } catch (error) {
       console.error(
         `File search failed: ${error instanceof Error ? error.message : String(error)}`

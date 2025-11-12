@@ -8,13 +8,9 @@ _This may or may not work with other MCP-compatible tools, such as ChatGPT, but 
 
 ## Quick Start
 
-### Installation
+### Prerequisites
 
 You will need to have [Node.js](https://nodejs.org/en) installed.
-
-```bash
-npm install -g phaset-mcp
-```
 
 ### Configuration
 

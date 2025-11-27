@@ -819,10 +819,10 @@ components:
 
     Tags:
       type: array
-      maxItems: 5
+      maxItems: 20
       items:
         type: string
         minLength: 1
-        maxLength: 20
-        pattern: '^[a-zA-Z0-9._~-]*$'
-        description: URL-safe, ASCII-compatible tag
+        maxLength: 50
+        pattern: '^[a-zA-Z0-9:._~-]*$'
+        description: URL-safe, ASCII-compatible tag, but may include colon
